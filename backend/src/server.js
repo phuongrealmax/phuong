@@ -153,6 +153,144 @@ app.get('/api/users/:address/models', async (req, res) => {
   }
 });
 
+// Get user stats
+app.get('/api/users/:address/stats', async (req, res) => {
+  try {
+    const userAddress = req.params.address;
+
+    // Mock data for now
+    const stats = {
+      totalModels: 3,
+      userModels: 2,
+      totalPurchases: 5,
+      totalEarnings: 2.5
+    };
+
+    res.json({
+      success: true,
+      stats: stats
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get user activity
+app.get('/api/users/:address/activity', async (req, res) => {
+  try {
+    const userAddress = req.params.address;
+
+    // Mock activity data
+    const activity = [
+      {
+        type: 'register',
+        description: 'Registered new AI model "GPT-Mona"',
+        timestamp: '2 hours ago',
+        amount: null
+      },
+      {
+        type: 'purchase',
+        description: 'Purchased "Sentiment Analyzer Pro"',
+        timestamp: '5 hours ago',
+        amount: '0.5'
+      },
+      {
+        type: 'sale',
+        description: 'Your model was purchased',
+        timestamp: '1 day ago',
+        amount: '1.2'
+      }
+    ];
+
+    res.json({
+      success: true,
+      activity: activity
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Marketplace endpoints
+
+// Get marketplace listings
+app.get('/api/marketplace/listings', async (req, res) => {
+  try {
+    // Mock marketplace listings
+    const listings = [
+      {
+        id: 1,
+        name: 'GPT-Mona AI Model',
+        description: 'Advanced language model for text generation',
+        price: '0.5',
+        seller: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+        purchases: 12,
+        category: 'Language Model'
+      },
+      {
+        id: 2,
+        name: 'Image Classifier Pro',
+        description: 'State-of-the-art image classification model',
+        price: '1.2',
+        seller: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+        purchases: 8,
+        category: 'Computer Vision'
+      },
+      {
+        id: 3,
+        name: 'Sentiment Analyzer',
+        description: 'Analyze sentiment in text with high accuracy',
+        price: '0.3',
+        seller: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
+        purchases: 25,
+        category: 'NLP'
+      }
+    ];
+
+    res.json({
+      success: true,
+      listings: listings
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Create marketplace listing
+app.post('/api/marketplace/create', async (req, res) => {
+  try {
+    const { modelId, price, privateKey } = req.body;
+
+    if (!modelId || !price || !privateKey) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields'
+      });
+    }
+
+    // This would interact with the marketplace contract
+    res.json({
+      success: true,
+      message: 'Listing created successfully',
+      listingId: Math.floor(Math.random() * 1000)
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

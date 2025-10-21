@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import './App.css';
+import Dashboard from './components/Dashboard';
+import Marketplace from './components/Marketplace';
 
 function App() {
   const [account, setAccount] = useState(null);
   const [provider, setProvider] = useState(null);
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [currentView, setCurrentView] = useState('dashboard');
 
   // Connect to MetaMask
   const connectWallet = async () => {
@@ -95,55 +98,95 @@ function App() {
         )}
       </header>
 
+      {account && (
+        <nav className="App-nav">
+          <button
+            className={currentView === 'dashboard' ? 'active' : ''}
+            onClick={() => setCurrentView('dashboard')}
+          >
+            Dashboard
+          </button>
+          <button
+            className={currentView === 'marketplace' ? 'active' : ''}
+            onClick={() => setCurrentView('marketplace')}
+          >
+            Marketplace
+          </button>
+          <button
+            className={currentView === 'models' ? 'active' : ''}
+            onClick={() => setCurrentView('models')}
+          >
+            My Models
+          </button>
+        </nav>
+      )}
+
       <main className="App-main">
-        {account && (
-          <div className="dashboard">
-            <section className="models-section">
-              <h2>AI Models</h2>
-              <button onClick={loadModels} disabled={loading}>
-                {loading ? 'Loading...' : 'Refresh Models'}
-              </button>
+        {account ? (
+          <>
+            {currentView === 'dashboard' && (
+              <Dashboard account={account} provider={provider} />
+            )}
 
-              <div className="models-grid">
-                {models.length === 0 ? (
-                  <p>No models registered yet</p>
-                ) : (
-                  models.map((model) => (
-                    <div key={model.id} className="model-card">
-                      <h3>{model.name}</h3>
-                      <p>ID: {model.id}</p>
-                      <p>Creator: {model.creator}</p>
-                    </div>
-                  ))
-                )}
+            {currentView === 'marketplace' && (
+              <Marketplace account={account} provider={provider} />
+            )}
+
+            {currentView === 'models' && (
+              <div className="my-models-view">
+                <section className="models-section">
+                  <h2>My AI Models</h2>
+                  <button onClick={loadModels} disabled={loading}>
+                    {loading ? 'Loading...' : 'Refresh Models'}
+                  </button>
+
+                  <div className="models-grid">
+                    {models.length === 0 ? (
+                      <p>No models registered yet</p>
+                    ) : (
+                      models.map((model) => (
+                        <div key={model.id} className="model-card">
+                          <h3>{model.name}</h3>
+                          <p>ID: {model.id}</p>
+                          <p>Creator: {model.creator}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+
+                <section className="register-section">
+                  <h2>Register New Model</h2>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    registerModel(
+                      formData.get('name'),
+                      formData.get('ipfsHash')
+                    );
+                  }}>
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="Model Name"
+                      required
+                    />
+                    <input
+                      type="text"
+                      name="ipfsHash"
+                      placeholder="IPFS Hash"
+                      required
+                    />
+                    <button type="submit">Register Model</button>
+                  </form>
+                </section>
               </div>
-            </section>
-
-            <section className="register-section">
-              <h2>Register New Model</h2>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                registerModel(
-                  formData.get('name'),
-                  formData.get('ipfsHash')
-                );
-              }}>
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Model Name"
-                  required
-                />
-                <input
-                  type="text"
-                  name="ipfsHash"
-                  placeholder="IPFS Hash"
-                  required
-                />
-                <button type="submit">Register Model</button>
-              </form>
-            </section>
+            )}
+          </>
+        ) : (
+          <div className="welcome-section">
+            <h2>Welcome to MonaAI</h2>
+            <p>Connect your wallet to get started</p>
           </div>
         )}
       </main>
