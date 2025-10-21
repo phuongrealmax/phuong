@@ -34,12 +34,29 @@ function Marketplace({ provider, account }) {
         return;
       }
 
-      // This would interact with the smart contract
       console.log('Purchasing model:', { listingId, price });
-      alert('Purchase feature coming soon!');
 
-      // Reload listings after purchase
-      loadListings();
+      // Call the purchase API
+      const response = await fetch('http://localhost:3001/api/marketplace/purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          listingId: listingId,
+          buyer: account
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Successfully purchased model! Transaction: ${data.purchase.txHash}`);
+        // Reload listings after purchase
+        loadListings();
+      } else {
+        alert('Purchase failed: ' + data.error);
+      }
     } catch (error) {
       console.error('Error purchasing model:', error);
       alert('Purchase failed: ' + error.message);

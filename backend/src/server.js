@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 3001;
 // Import analytics and monitoring
 const { router: analyticsRouter, trackUserActivity } = require('./analytics');
 const monitor = require('./monitor');
+const { getSimulator } = require('./blockchain-simulator');
 
 // Middleware
 app.use(cors());
@@ -46,6 +47,9 @@ if (process.env.RPC_URL && process.env.CONTRACT_ADDRESS) {
   // contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, ABI, provider);
 }
 
+// Initialize blockchain simulator
+const simulator = getSimulator('./data');
+
 // Routes
 
 // Health check
@@ -60,11 +64,18 @@ app.get('/health', (req, res) => {
 // Get all models
 app.get('/api/models', async (req, res) => {
   try {
-    // This would query the blockchain for all models
-    // For now, return a placeholder
+    const { category, search } = req.query;
+    let models = simulator.getModels();
+
+    // Apply filters if provided
+    if (search || category) {
+      models = simulator.searchModels(search, category);
+    }
+
     res.json({
       success: true,
-      models: []
+      models: models,
+      total: models.length
     });
   } catch (error) {
     res.status(500).json({
@@ -78,16 +89,18 @@ app.get('/api/models', async (req, res) => {
 app.get('/api/models/:id', async (req, res) => {
   try {
     const modelId = req.params.id;
+    const model = simulator.getModelById(modelId);
 
-    // Query blockchain for model details
-    // const model = await contract.getModel(modelId);
+    if (!model) {
+      return res.status(404).json({
+        success: false,
+        error: 'Model not found'
+      });
+    }
 
     res.json({
       success: true,
-      model: {
-        id: modelId,
-        // ... other model details
-      }
+      model: model
     });
   } catch (error) {
     res.status(500).json({
@@ -100,27 +113,29 @@ app.get('/api/models/:id', async (req, res) => {
 // Register a new model
 app.post('/api/models/register', async (req, res) => {
   try {
-    const { name, ipfsHash, privateKey } = req.body;
+    const { name, description, ipfsHash, creator, category, version, metrics } = req.body;
 
-    if (!name || !ipfsHash || !privateKey) {
+    if (!name || !description || !creator) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: name, ipfsHash, privateKey'
+        error: 'Missing required fields: name, description, creator'
       });
     }
 
-    // Create wallet from private key
-    const wallet = new ethers.Wallet(privateKey, provider);
-    // const contractWithSigner = contract.connect(wallet);
-
-    // Register model on blockchain
-    // const tx = await contractWithSigner.registerModel(name, ipfsHash);
-    // await tx.wait();
+    const model = simulator.addModel({
+      name,
+      description,
+      ipfsHash,
+      creator,
+      category,
+      version,
+      metrics
+    });
 
     res.json({
       success: true,
       message: 'Model registered successfully',
-      // transactionHash: tx.hash
+      model: model
     });
   } catch (error) {
     res.status(500).json({
@@ -183,14 +198,7 @@ app.get('/api/users/:address/models', async (req, res) => {
 app.get('/api/users/:address/stats', async (req, res) => {
   try {
     const userAddress = req.params.address;
-
-    // Mock data for now
-    const stats = {
-      totalModels: 3,
-      userModels: 2,
-      totalPurchases: 5,
-      totalEarnings: 2.5
-    };
+    const stats = simulator.getUserStats(userAddress);
 
     res.json({
       success: true,
@@ -208,28 +216,9 @@ app.get('/api/users/:address/stats', async (req, res) => {
 app.get('/api/users/:address/activity', async (req, res) => {
   try {
     const userAddress = req.params.address;
+    const limit = parseInt(req.query.limit) || 10;
 
-    // Mock activity data
-    const activity = [
-      {
-        type: 'register',
-        description: 'Registered new AI model "GPT-Mona"',
-        timestamp: '2 hours ago',
-        amount: null
-      },
-      {
-        type: 'purchase',
-        description: 'Purchased "Sentiment Analyzer Pro"',
-        timestamp: '5 hours ago',
-        amount: '0.5'
-      },
-      {
-        type: 'sale',
-        description: 'Your model was purchased',
-        timestamp: '1 day ago',
-        amount: '1.2'
-      }
-    ];
+    const activity = simulator.getUserActivity(userAddress, limit);
 
     res.json({
       success: true,
@@ -248,40 +237,28 @@ app.get('/api/users/:address/activity', async (req, res) => {
 // Get marketplace listings
 app.get('/api/marketplace/listings', async (req, res) => {
   try {
-    // Mock marketplace listings
-    const listings = [
-      {
-        id: 1,
-        name: 'GPT-Mona AI Model',
-        description: 'Advanced language model for text generation',
-        price: '0.5',
-        seller: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-        purchases: 12,
-        category: 'Language Model'
-      },
-      {
-        id: 2,
-        name: 'Image Classifier Pro',
-        description: 'State-of-the-art image classification model',
-        price: '1.2',
-        seller: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
-        purchases: 8,
-        category: 'Computer Vision'
-      },
-      {
-        id: 3,
-        name: 'Sentiment Analyzer',
-        description: 'Analyze sentiment in text with high accuracy',
-        price: '0.3',
-        seller: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
-        purchases: 25,
-        category: 'NLP'
-      }
-    ];
+    const activeListings = simulator.getActiveListings();
+
+    // Transform to include model details
+    const listings = activeListings.map(listing => ({
+      id: listing.id,
+      name: listing.model?.name || 'Unknown Model',
+      description: listing.model?.description || '',
+      price: listing.price,
+      seller: listing.seller,
+      purchases: listing.purchases || 0,
+      category: listing.model?.category || 'Uncategorized',
+      modelId: listing.modelId,
+      ipfsHash: listing.model?.ipfsHash,
+      version: listing.model?.version,
+      metrics: listing.model?.metrics,
+      createdAt: listing.createdAt
+    }));
 
     res.json({
       success: true,
-      listings: listings
+      listings: listings,
+      total: listings.length
     });
   } catch (error) {
     res.status(500).json({
@@ -294,20 +271,69 @@ app.get('/api/marketplace/listings', async (req, res) => {
 // Create marketplace listing
 app.post('/api/marketplace/create', async (req, res) => {
   try {
-    const { modelId, price, privateKey } = req.body;
+    const { modelId, price, seller } = req.body;
 
-    if (!modelId || !price || !privateKey) {
+    if (!modelId || !price || !seller) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields'
+        error: 'Missing required fields: modelId, price, seller'
       });
     }
 
-    // This would interact with the marketplace contract
+    const listing = simulator.createListing({
+      modelId: parseInt(modelId),
+      price,
+      seller
+    });
+
     res.json({
       success: true,
       message: 'Listing created successfully',
-      listingId: Math.floor(Math.random() * 1000)
+      listing: listing
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Purchase a model
+app.post('/api/marketplace/purchase', async (req, res) => {
+  try {
+    const { listingId, buyer } = req.body;
+
+    if (!listingId || !buyer) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: listingId, buyer'
+      });
+    }
+
+    const purchase = simulator.purchaseModel(listingId, buyer);
+
+    res.json({
+      success: true,
+      message: 'Model purchased successfully',
+      purchase: purchase
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get platform statistics
+app.get('/api/platform/stats', async (req, res) => {
+  try {
+    const stats = simulator.getPlatformStats();
+
+    res.json({
+      success: true,
+      stats: stats
     });
   } catch (error) {
     res.status(500).json({
