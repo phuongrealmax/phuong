@@ -1,0 +1,359 @@
+.revenue-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.revenue-container h1 {
+  font-size: 2.5em;
+  margin-bottom: 30px;
+  color: #1a1a1a;
+}
+
+.revenue-section {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.revenue-section h2 {
+  font-size: 1.8em;
+  margin-bottom: 20px;
+  color: #2c3e50;
+  border-bottom: 2px solid #3b82f6;
+  padding-bottom: 10px;
+}
+
+/* Revenue Stats */
+.revenue-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 25px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+}
+
+.stat-value {
+  font-size: 2em;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+/* Subscription Tiers */
+.current-subscription {
+  background: #e0f2fe;
+  border: 2px solid #0ea5e9;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 1.1em;
+}
+
+.tiers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
+.tier-card {
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 25px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.tier-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+  transform: translateY(-5px);
+}
+
+.tier-card.active {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.tier-card h3 {
+  font-size: 1.5em;
+  margin-bottom: 15px;
+  color: #1f2937;
+}
+
+.tier-price {
+  font-size: 2.5em;
+  font-weight: bold;
+  color: #3b82f6;
+  margin-bottom: 20px;
+}
+
+.tier-features {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.tier-features li {
+  padding: 8px 0;
+  color: #4b5563;
+  font-size: 0.95em;
+}
+
+.feature-item {
+  padding-left: 10px;
+  color: #059669 !important;
+}
+
+.subscribe-btn {
+  width: 100%;
+  padding: 12px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin-top: 15px;
+}
+
+.subscribe-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.subscribe-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Staking Section */
+.staking-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 20px;
+  margin-bottom: 30px;
+  align-items: end;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-group input,
+.form-group select {
+  padding: 12px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1em;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.stake-btn {
+  padding: 12px 30px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  white-space: nowrap;
+}
+
+.stake-btn:hover:not(:disabled) {
+  background: #059669;
+}
+
+.stake-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Stakes List */
+.stakes-list {
+  margin-top: 30px;
+}
+
+.stakes-list h3 {
+  font-size: 1.4em;
+  margin-bottom: 15px;
+  color: #1f2937;
+}
+
+.stake-item {
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.stake-item:hover {
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+}
+
+.stake-info {
+  flex: 1;
+}
+
+.stake-info > div {
+  margin-bottom: 8px;
+}
+
+.stake-rewards {
+  color: #059669;
+  font-size: 1.1em;
+}
+
+.stake-dates {
+  font-size: 0.9em;
+  color: #6b7280;
+}
+
+.stake-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.claim-btn,
+.unstake-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.claim-btn {
+  background: #10b981;
+  color: white;
+}
+
+.claim-btn:hover {
+  background: #059669;
+}
+
+.unstake-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.unstake-btn:hover {
+  background: #dc2626;
+}
+
+.unstaked-badge {
+  background: #9ca3af;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+/* Revenue Chart */
+.revenue-chart {
+  margin-top: 20px;
+}
+
+.chart-bar {
+  height: 60px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  color: white;
+  font-weight: 600;
+  font-size: 1.1em;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.chart-bar:hover {
+  opacity: 0.9;
+  transform: scaleX(1.02);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .revenue-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tiers-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .staking-form {
+    grid-template-columns: 1fr;
+  }
+
+  .stake-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .stake-actions {
+    width: 100%;
+    margin-top: 15px;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .revenue-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-value {
+    font-size: 1.5em;
+  }
+
+  .revenue-container h1 {
+    font-size: 1.8em;
+  }
+}

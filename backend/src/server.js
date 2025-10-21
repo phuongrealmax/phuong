@@ -10,6 +10,7 @@ const PORT = process.env.PORT || 3001;
 const { router: analyticsRouter, trackUserActivity } = require('./analytics');
 const monitor = require('./monitor');
 const { getSimulator } = require('./blockchain-simulator');
+const { getMonetization } = require('./monetization');
 
 // Middleware
 app.use(cors());
@@ -47,8 +48,9 @@ if (process.env.RPC_URL && process.env.CONTRACT_ADDRESS) {
   // contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, ABI, provider);
 }
 
-// Initialize blockchain simulator
+// Initialize blockchain simulator and monetization
 const simulator = getSimulator('./data');
+const monetization = getMonetization('./data');
 
 // Routes
 
@@ -313,10 +315,25 @@ app.post('/api/marketplace/purchase', async (req, res) => {
 
     const purchase = simulator.purchaseModel(listingId, buyer);
 
+    // Process platform fee
+    const feeDetails = monetization.processSale({
+      listingId: purchase.listingId,
+      modelId: purchase.modelId,
+      buyer: purchase.buyer,
+      seller: purchase.seller,
+      price: purchase.price,
+      txHash: purchase.txHash
+    });
+
     res.json({
       success: true,
       message: 'Model purchased successfully',
-      purchase: purchase
+      purchase: purchase,
+      fees: {
+        platformFee: feeDetails.platformFee,
+        sellerAmount: feeDetails.sellerAmount,
+        feeMessage: feeDetails.message
+      }
     });
   } catch (error) {
     res.status(500).json({
@@ -334,6 +351,204 @@ app.get('/api/platform/stats', async (req, res) => {
     res.json({
       success: true,
       stats: stats
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ===== MONETIZATION ENDPOINTS =====
+
+// Get subscription tiers and pricing
+app.get('/api/monetization/tiers', (req, res) => {
+  try {
+    const tiers = monetization.getSubscriptionTiers();
+    res.json({
+      success: true,
+      tiers: tiers
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Subscribe to a tier
+app.post('/api/monetization/subscribe', async (req, res) => {
+  try {
+    const { userAddress, tier, duration } = req.body;
+
+    if (!userAddress || !tier) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: userAddress, tier'
+      });
+    }
+
+    const subscription = monetization.subscribe(userAddress, tier, duration || 30);
+
+    res.json({
+      success: true,
+      message: 'Subscription created successfully',
+      subscription: subscription
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get user subscription
+app.get('/api/monetization/subscription/:address', (req, res) => {
+  try {
+    const userAddress = req.params.address;
+    const subscription = monetization.getUserSubscription(userAddress);
+
+    res.json({
+      success: true,
+      subscription: subscription
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Stake tokens
+app.post('/api/monetization/stake', async (req, res) => {
+  try {
+    const { userAddress, amount, lockPeriod } = req.body;
+
+    if (!userAddress || !amount) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: userAddress, amount'
+      });
+    }
+
+    const stake = monetization.stake(userAddress, amount, lockPeriod || 'flexible');
+
+    res.json({
+      success: true,
+      message: 'Tokens staked successfully',
+      stake: stake
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get user stakes
+app.get('/api/monetization/stakes/:address', (req, res) => {
+  try {
+    const userAddress = req.params.address;
+    const stakes = monetization.getUserStakes(userAddress);
+
+    res.json({
+      success: true,
+      stakes: stakes
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Claim staking rewards
+app.post('/api/monetization/claim-rewards', async (req, res) => {
+  try {
+    const { stakeId, userAddress } = req.body;
+
+    if (!stakeId || !userAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: stakeId, userAddress'
+      });
+    }
+
+    const claim = monetization.claimRewards(stakeId, userAddress);
+
+    res.json({
+      success: true,
+      message: 'Rewards claimed successfully',
+      claim: claim
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Unstake tokens
+app.post('/api/monetization/unstake', async (req, res) => {
+  try {
+    const { stakeId, userAddress } = req.body;
+
+    if (!stakeId || !userAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: stakeId, userAddress'
+      });
+    }
+
+    const result = monetization.unstake(stakeId, userAddress);
+
+    res.json({
+      success: true,
+      message: 'Tokens unstaked successfully',
+      result: result
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get revenue summary
+app.get('/api/monetization/revenue', (req, res) => {
+  try {
+    const revenue = monetization.getRevenueSummary();
+
+    res.json({
+      success: true,
+      revenue: revenue
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get platform fees collected
+app.get('/api/monetization/fees', (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const fees = monetization.getAllFees(limit);
+
+    res.json({
+      success: true,
+      fees: fees,
+      total: fees.length
     });
   } catch (error) {
     res.status(500).json({

@@ -4,6 +4,7 @@ import './App.css';
 import Dashboard from './components/Dashboard';
 import Marketplace from './components/Marketplace';
 import Analytics from './components/Analytics';
+import Revenue from './components/Revenue';
 
 function App() {
   const [account, setAccount] = useState(null);
@@ -120,6 +121,12 @@ function App() {
             Analytics
           </button>
           <button
+            className={currentView === 'revenue' ? 'active' : ''}
+            onClick={() => setCurrentView('revenue')}
+          >
+            Revenue
+          </button>
+          <button
             className={currentView === 'models' ? 'active' : ''}
             onClick={() => setCurrentView('models')}
           >
@@ -141,6 +148,10 @@ function App() {
 
             {currentView === 'analytics' && (
               <Analytics account={account} provider={provider} />
+            )}
+
+            {currentView === 'revenue' && (
+              <Revenue account={account} provider={provider} />
             )}
 
             {currentView === 'models' && (
