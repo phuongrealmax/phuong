@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import './App.css';
 import Dashboard from './components/Dashboard';
 import Marketplace from './components/Marketplace';
+import Analytics from './components/Analytics';
 
 function App() {
   const [account, setAccount] = useState(null);
@@ -113,6 +114,12 @@ function App() {
             Marketplace
           </button>
           <button
+            className={currentView === 'analytics' ? 'active' : ''}
+            onClick={() => setCurrentView('analytics')}
+          >
+            Analytics
+          </button>
+          <button
             className={currentView === 'models' ? 'active' : ''}
             onClick={() => setCurrentView('models')}
           >
@@ -130,6 +137,10 @@ function App() {
 
             {currentView === 'marketplace' && (
               <Marketplace account={account} provider={provider} />
+            )}
+
+            {currentView === 'analytics' && (
+              <Analytics account={account} provider={provider} />
             )}
 
             {currentView === 'models' && (

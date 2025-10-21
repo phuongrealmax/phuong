@@ -6,9 +6,35 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Import analytics and monitoring
+const { router: analyticsRouter, trackUserActivity } = require('./analytics');
+const monitor = require('./monitor');
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Performance monitoring middleware
+app.use(monitor.trackRequest());
+
+// Activity tracking middleware
+app.use((req, res, next) => {
+  // Track API requests
+  const userAddress = req.headers['x-user-address'] || req.query.address || req.body.address;
+
+  if (userAddress && userAddress.startsWith('0x')) {
+    trackUserActivity(userAddress, {
+      type: 'api_request',
+      metadata: {
+        path: req.path,
+        method: req.method,
+        timestamp: Date.now()
+      }
+    });
+  }
+
+  next();
+});
 
 // Web3 setup
 let provider;
@@ -289,6 +315,27 @@ app.post('/api/marketplace/create', async (req, res) => {
       error: error.message
     });
   }
+});
+
+// Analytics routes
+app.use('/api/analytics', analyticsRouter);
+
+// Monitor/Performance routes
+app.get('/api/monitor/metrics', (req, res) => {
+  res.json({
+    success: true,
+    metrics: monitor.getMetrics()
+  });
+});
+
+app.get('/api/monitor/health', (req, res) => {
+  const health = monitor.getHealthStatus();
+  const statusCode = health.status === 'healthy' ? 200 : health.status === 'warning' ? 200 : 503;
+
+  res.status(statusCode).json({
+    success: true,
+    health: health
+  });
 });
 
 // Error handling middleware
