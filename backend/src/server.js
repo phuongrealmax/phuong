@@ -11,6 +11,7 @@ const { router: analyticsRouter, trackUserActivity } = require('./analytics');
 const monitor = require('./monitor');
 const { getSimulator } = require('./blockchain-simulator');
 const { getMonetization } = require('./monetization');
+const { getVerification } = require('./model-verification');
 
 // Middleware
 app.use(cors());
@@ -48,9 +49,10 @@ if (process.env.RPC_URL && process.env.CONTRACT_ADDRESS) {
   // contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, ABI, provider);
 }
 
-// Initialize blockchain simulator and monetization
+// Initialize blockchain simulator, monetization, and verification
 const simulator = getSimulator('./data');
 const monetization = getMonetization('./data');
+const verification = getVerification('./data');
 
 // Routes
 
@@ -134,38 +136,14 @@ app.post('/api/models/register', async (req, res) => {
       metrics
     });
 
+    // Auto-verify the model
+    const verificationResult = verification.verifyModel(model.id, model);
+
     res.json({
       success: true,
-      message: 'Model registered successfully',
-      model: model
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Run inference
-app.post('/api/inference', async (req, res) => {
-  try {
-    const { modelId, input } = req.body;
-
-    if (!modelId || !input) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: modelId, input'
-      });
-    }
-
-    // This would call the AI inference service
-    // For now, return a placeholder
-    res.json({
-      success: true,
-      result: 'Inference result placeholder',
-      modelId: modelId,
-      input: input
+      message: 'Model registered and verified successfully',
+      model: model,
+      verification: verificationResult
     });
   } catch (error) {
     res.status(500).json({
@@ -549,6 +527,246 @@ app.get('/api/monetization/fees', (req, res) => {
       success: true,
       fees: fees,
       total: fees.length
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ===== MODEL VERIFICATION & QUALITY ASSURANCE =====
+
+// Get model verification status
+app.get('/api/verification/model/:id', (req, res) => {
+  try {
+    const modelId = parseInt(req.params.id);
+    const status = verification.getVerificationStatus(modelId);
+
+    res.json({
+      success: true,
+      verification: status
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get model trust score
+app.get('/api/verification/trust-score/:id', (req, res) => {
+  try {
+    const modelId = parseInt(req.params.id);
+    const trustScore = verification.getTrustScore(modelId);
+
+    res.json({
+      success: true,
+      trustScore: trustScore
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Rate a model
+app.post('/api/verification/rate', async (req, res) => {
+  try {
+    const { modelId, userAddress, rating, review } = req.body;
+
+    if (!modelId || !userAddress || !rating) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: modelId, userAddress, rating'
+      });
+    }
+
+    const ratingResult = verification.rateModel(
+      parseInt(modelId),
+      userAddress,
+      parseInt(rating),
+      review
+    );
+
+    res.json({
+      success: true,
+      message: 'Rating submitted successfully',
+      rating: ratingResult
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get model ratings
+app.get('/api/verification/ratings/:id', (req, res) => {
+  try {
+    const modelId = parseInt(req.params.id);
+    const ratings = verification.getModelRatings(modelId);
+
+    res.json({
+      success: true,
+      ratings: ratings
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Report a model
+app.post('/api/verification/report', async (req, res) => {
+  try {
+    const { modelId, userAddress, reason, description } = req.body;
+
+    if (!modelId || !userAddress || !reason) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: modelId, userAddress, reason'
+      });
+    }
+
+    const report = verification.reportModel(
+      parseInt(modelId),
+      userAddress,
+      reason,
+      description
+    );
+
+    res.json({
+      success: true,
+      message: 'Report submitted successfully',
+      report: report
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get verified models
+app.get('/api/verification/verified-models', (req, res) => {
+  try {
+    const verifiedModels = verification.getVerifiedModels();
+    const premiumModels = verification.getPremiumModels();
+
+    res.json({
+      success: true,
+      verified: verifiedModels,
+      premium: premiumModels,
+      counts: {
+        verified: verifiedModels.length,
+        premium: premiumModels.length
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Run inference (DEMO - shows value of AI models)
+app.post('/api/inference', async (req, res) => {
+  try {
+    const { modelId, input, userAddress } = req.body;
+
+    if (!modelId || !input) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: modelId, input'
+      });
+    }
+
+    // Get model details
+    const model = simulator.getModelById(modelId);
+    if (!model) {
+      return res.status(404).json({
+        success: false,
+        error: 'Model not found'
+      });
+    }
+
+    // Check if model is verified
+    const verificationStatus = verification.getVerificationStatus(modelId);
+    if (verificationStatus.status !== 'verified') {
+      return res.status(403).json({
+        success: false,
+        error: 'Only verified models can run inference',
+        verification: verificationStatus
+      });
+    }
+
+    // Track API usage for billing
+    if (userAddress) {
+      const usage = monetization.trackAPIUsage(userAddress, 'inference', 1);
+      if (usage.overageCharges > 0) {
+        console.log(`User ${userAddress} incurred overage charges: ${usage.overageCharges} ETH`);
+      }
+    }
+
+    // DEMO inference - In production would call actual AI model
+    let output;
+    const category = model.category.toLowerCase();
+
+    if (category.includes('language') || category.includes('nlp')) {
+      // Language model demo
+      output = {
+        text: `[${model.name} Response]: This is a demo response to: "${input.substring(0, 100)}...". In production, this would be actual AI-generated text from the model trained on ${(model.metrics?.parameters / 1000000000).toFixed(1)}B parameters with ${(model.metrics?.accuracy * 100).toFixed(1)}% accuracy.`,
+        confidence: 0.92,
+        tokens: 150
+      };
+    } else if (category.includes('vision') || category.includes('image')) {
+      // Vision model demo
+      output = {
+        classifications: [
+          { label: 'Object A', confidence: 0.95 },
+          { label: 'Object B', confidence: 0.87 },
+          { label: 'Object C', confidence: 0.72 }
+        ],
+        detectedObjects: 3,
+        accuracy: model.metrics?.accuracy || 0.96
+      };
+    } else if (category.includes('audio')) {
+      // Audio model demo
+      output = {
+        classification: 'Speech',
+        confidence: 0.89,
+        transcription: '[Demo transcription of audio input]',
+        duration: '2.5s'
+      };
+    } else {
+      // Generic demo
+      output = {
+        result: `Processed by ${model.name}`,
+        confidence: 0.85,
+        model_version: model.version
+      };
+    }
+
+    res.json({
+      success: true,
+      modelId: modelId,
+      modelName: model.name,
+      input: input.substring(0, 200), // Truncate for response
+      output: output,
+      timestamp: Date.now(),
+      processingTime: `${Math.random() * 500 + 100}ms`,
+      demo: true,
+      message: 'This is a demo inference. In production, this would call the actual AI model.'
     });
   } catch (error) {
     res.status(500).json({
