@@ -1,0 +1,34 @@
+{
+  "name": "monaai",
+  "version": "1.0.0",
+  "description": "MonaAI - Blockchain-based AI Model Platform",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.js",
+    "node": "hardhat node",
+    "backend": "cd backend && npm start",
+    "frontend": "cd frontend && npm start",
+    "dev": "concurrently \"npm run node\" \"npm run backend\" \"npm run frontend\""
+  },
+  "keywords": [
+    "blockchain",
+    "AI",
+    "machine-learning",
+    "ethereum",
+    "smart-contracts",
+    "IPFS"
+  ],
+  "author": "MonaAI Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.0",
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "ethers": "^6.9.0"
+  }
+}
