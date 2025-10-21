@@ -29,13 +29,14 @@ class PerformanceMonitor {
    * Middleware to track request metrics
    */
   trackRequest() {
+    const self = this;
     return (req, res, next) => {
       const startTime = Date.now();
 
       // Track endpoint
       const endpoint = `${req.method} ${req.route?.path || req.path}`;
-      if (!this.metrics.endpoints[endpoint]) {
-        this.metrics.endpoints[endpoint] = {
+      if (!self.metrics.endpoints[endpoint]) {
+        self.metrics.endpoints[endpoint] = {
           count: 0,
           avgLatency: 0,
           errors: 0
@@ -48,30 +49,30 @@ class PerformanceMonitor {
         const latency = Date.now() - startTime;
 
         // Update metrics
-        this.metrics.requests.total++;
-        this.metrics.requests.latencies.push(latency);
+        self.metrics.requests.total++;
+        self.metrics.requests.latencies.push(latency);
 
         // Keep only last 1000 latencies
-        if (this.metrics.requests.latencies.length > 1000) {
-          this.metrics.requests.latencies.shift();
+        if (self.metrics.requests.latencies.length > 1000) {
+          self.metrics.requests.latencies.shift();
         }
 
         // Update endpoint metrics
-        const endpointMetrics = this.metrics.endpoints[endpoint];
+        const endpointMetrics = self.metrics.endpoints[endpoint];
         endpointMetrics.count++;
         endpointMetrics.avgLatency =
           (endpointMetrics.avgLatency * (endpointMetrics.count - 1) + latency) /
           endpointMetrics.count;
 
         if (res.statusCode >= 400) {
-          this.metrics.requests.errors++;
+          self.metrics.requests.errors++;
           endpointMetrics.errors++;
         } else {
-          this.metrics.requests.success++;
+          self.metrics.requests.success++;
         }
 
         return originalSend.call(this, data);
-      }.bind(this);
+      };
 
       next();
     };
